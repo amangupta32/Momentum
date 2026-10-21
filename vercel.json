@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "npm --prefix Productivity ci",
+  "buildCommand": "npm --prefix Productivity run build",
+  "outputDirectory": "Productivity/dist",
+  "framework": "vite"
+}
