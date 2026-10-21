@@ -4,6 +4,7 @@
   "scripts": {
     "dev": "npm --prefix Productivity run dev",
     "build": "npm --prefix Productivity run build",
-    "lint": "npm --prefix Productivity run lint"
+    "lint": "npm --prefix Productivity run lint",
+    "postinstall": "npm --prefix Productivity install"
   }
 }
