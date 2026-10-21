@@ -1,0 +1,9 @@
+{
+  "name": "momentum-auth-update",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix Productivity run dev",
+    "build": "npm --prefix Productivity run build",
+    "lint": "npm --prefix Productivity run lint"
+  }
+}
