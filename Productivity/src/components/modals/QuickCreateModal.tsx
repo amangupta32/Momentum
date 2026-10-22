@@ -37,6 +37,7 @@ export const QuickCreateModal: React.FC = () => {
   const [taskDueDate, setTaskDueDate] = useState('');
   const [taskLinkedGoal, setTaskLinkedGoal] = useState<string>('');
   const [taskLabel, setTaskLabel] = useState('');
+  const [isTaskPrivate, setIsTaskPrivate] = useState<boolean>(false);
 
   // Goal form state
   const [goalTitle, setGoalTitle] = useState('');
@@ -117,6 +118,7 @@ export const QuickCreateModal: React.FC = () => {
         : ['Productivity'],
       checklist: [],
       isTodayFocus: false,
+      isPrivate: isTaskPrivate,
     });
     setQuickCreateOpen(false);
   };
@@ -208,6 +210,7 @@ export const QuickCreateModal: React.FC = () => {
           </button>
 
           <button
+            id="onboarding-create-goal"
             onClick={() => setActiveType('personal_goal')}
             className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-medium transition-all ${
               activeType === 'personal_goal'
@@ -216,7 +219,7 @@ export const QuickCreateModal: React.FC = () => {
             }`}
           >
             <Target size={14} />
-            <span>Personal Goal</span>
+            <span>Goal</span>
           </button>
 
           <button
@@ -249,6 +252,36 @@ export const QuickCreateModal: React.FC = () => {
           {/* TASK FORM */}
           {activeType === 'task' && (
             <form onSubmit={handleSubmitTask} className="space-y-4">
+              {/* Task Visibility / Scope */}
+              <div>
+                <label className="block text-xs font-semibold text-[#1C221F] mb-1">
+                  Task Visibility & Ownership
+                </label>
+                <div className="grid grid-cols-2 gap-2 bg-[#FAF8F5] p-1 rounded-xl border border-[#E8E4DA]">
+                  <button
+                    type="button"
+                    onClick={() => setIsTaskPrivate(false)}
+                    className={`py-1.5 px-3 rounded-lg text-xs font-semibold transition-all ${
+                      !isTaskPrivate
+                        ? 'bg-[#1E3A2F] text-white shadow-2xs'
+                        : 'text-[#5C6560] hover:text-[#1C221F]'
+                    }`}
+                  >
+                    Team Task (Shared)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsTaskPrivate(true)}
+                    className={`py-1.5 px-3 rounded-lg text-xs font-semibold transition-all ${
+                      isTaskPrivate
+                        ? 'bg-[#1E3A2F] text-white shadow-2xs'
+                        : 'text-[#5C6560] hover:text-[#1C221F]'
+                    }`}
+                  >
+                    Personal Task (Private)
+                  </button>
+                </div>
+              </div>
               <div>
                 <label className="block text-xs font-semibold text-[#1C221F] mb-1">
                   Task Title <span className="text-rose-500">*</span>

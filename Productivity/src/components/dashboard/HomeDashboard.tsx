@@ -14,6 +14,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { AnimalAvatar } from '../avatars/AnimalAvatar';
 
 export const HomeDashboard: React.FC = () => {
   const {
@@ -479,10 +480,11 @@ export const HomeDashboard: React.FC = () => {
                 const user = users.find((u) => u.id === act.userId);
                 return (
                   <div key={act.id} className="flex items-start gap-2.5 text-xs">
-                    <img
-                      src={user?.avatar}
-                      alt={user?.name}
-                      className="w-5 h-5 rounded-full object-cover shrink-0 mt-0.5"
+                    <AnimalAvatar
+                      avatar={user?.avatar}
+                      name={user?.name}
+                      size={20}
+                      className="mt-0.5 shrink-0"
                     />
                     <div className="min-w-0 flex-1">
                       <p className="text-[#1C221F]">

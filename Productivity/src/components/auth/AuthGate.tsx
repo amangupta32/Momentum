@@ -23,11 +23,15 @@ interface AuthGateProps {
 function identityFromUser(user: SupabaseUser): AuthIdentity {
   const metadata = user.user_metadata || {};
   const name = String(metadata.full_name || metadata.name || user.email?.split('@')[0] || 'Member');
+  const rawAvatar = metadata.avatar_url;
+  const avatar = rawAvatar && typeof rawAvatar === 'string' && !rawAvatar.includes('dicebear')
+    ? rawAvatar
+    : 'lion';
   return {
     id: user.id,
     name,
     email: user.email || '',
-    avatar: String(metadata.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || user.id)}`),
+    avatar,
     role: 'Member',
     title: 'Momentum Member',
     bio: '',

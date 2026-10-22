@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { GoalType } from '../../types';
+import { AnimalAvatar } from '../avatars/AnimalAvatar';
 
 interface GoalsViewProps {
   type: GoalType;
@@ -252,10 +253,10 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ type }) => {
                 {/* Footer metadata */}
                 <div className="pt-3 border-t border-[#F2EFE9] flex items-center justify-between text-xs text-[#8E9892]">
                   <div className="flex items-center gap-1.5 truncate">
-                    <img
-                      src={owner?.avatar}
-                      alt={owner?.name}
-                      className="w-5 h-5 rounded-full object-cover shrink-0"
+                    <AnimalAvatar
+                      avatar={owner?.avatar}
+                      name={owner?.name}
+                      size={20}
                     />
                     <span className="truncate text-[#5C6560] font-medium text-[11px]">
                       {owner?.name}

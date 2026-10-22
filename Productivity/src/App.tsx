@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { User } from './types';
 import { AppProvider, useApp } from './context/AppContext';
 import { Sidebar } from './components/layout/Sidebar';
 import { TopBar } from './components/layout/TopBar';
+import { MemberSidebar } from './components/layout/MemberSidebar';
+import { MemberProfileModal } from './components/team/MemberProfileModal';
+import { InteractiveOnboarding } from './components/onboarding/InteractiveOnboarding';
 import { Toaster } from './components/layout/Toaster';
 import { SearchModal } from './components/modals/SearchModal';
 import { QuickCreateModal } from './components/modals/QuickCreateModal';
@@ -21,7 +24,19 @@ import { SettingsView } from './components/settings/SettingsView';
 import { AuthGate } from './components/auth/AuthGate';
 
 const MainLayout: React.FC = () => {
-  const { activeTab, sidebarOpen } = useApp();
+  const {
+    activeTab,
+    sidebarOpen,
+    onboardingCompleted,
+    setOnboardingCompleted,
+    restartOnboarding,
+    selectedMemberForProfile,
+    setSelectedMemberForProfile,
+    membersPanelOpen,
+    toggleMembersPanel,
+    setMembersPanelOpen,
+    openQuickCreate,
+  } = useApp();
 
   const renderActiveView = () => {
     switch (activeTab) {
@@ -54,18 +69,48 @@ const MainLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#FAF8F5] text-[#1C221F] flex flex-col font-sans selection:bg-[#1E3A2F] selection:text-white">
-      {/* Sidebar */}
+      {/* Discord-inspired Left Rail & Sidebar */}
       <Sidebar />
 
       {/* Main Content Area */}
       <div
         className={`flex-1 flex flex-col transition-all duration-300 ${
-          sidebarOpen ? 'lg:pl-64' : 'lg:pl-18'
+          sidebarOpen ? 'lg:pl-[296px]' : 'lg:pl-[72px]'
         }`}
       >
-        <TopBar />
-        <main className="flex-1 pb-16">{renderActiveView()}</main>
+        <TopBar
+          onToggleMembers={toggleMembersPanel}
+          membersPanelOpen={membersPanelOpen}
+          onReplayOnboarding={restartOnboarding}
+        />
+
+        <div className="flex-1 flex overflow-hidden">
+          {/* Active View Container */}
+          <main className="flex-1 overflow-y-auto pb-16">{renderActiveView()}</main>
+
+          {/* Discord-style Right Member Panel */}
+          <MemberSidebar
+            isOpen={membersPanelOpen}
+            onClose={() => setMembersPanelOpen(false)}
+            onSelectMember={(member) => setSelectedMemberForProfile(member)}
+            onInvite={() => openQuickCreate('task')}
+          />
+        </div>
       </div>
+
+      {/* Member Profile Drawer Modal */}
+      {selectedMemberForProfile && (
+        <MemberProfileModal
+          member={selectedMemberForProfile}
+          onClose={() => setSelectedMemberForProfile(null)}
+        />
+      )}
+
+      {/* Interactive Onboarding Tour (First-time users only) */}
+      <InteractiveOnboarding
+        completed={onboardingCompleted}
+        onComplete={() => setOnboardingCompleted(true)}
+      />
 
       {/* Global Modals & Dialogs */}
       <SearchModal />

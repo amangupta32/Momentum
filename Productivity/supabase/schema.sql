@@ -21,6 +21,9 @@ alter table public.profiles add column if not exists title text not null default
 alter table public.profiles add column if not exists role text not null default 'Member';
 alter table public.profiles add column if not exists bio text not null default '';
 alter table public.profiles add column if not exists streak_days integer not null default 0;
+alter table public.profiles add column if not exists onboarding_completed boolean not null default false;
+alter table public.profiles add column if not exists onboarding_dismissed_steps text[] not null default '{}';
+alter table public.profiles add column if not exists board_background text not null default 'default';
 
 -- 2. WORKSPACES
 create table if not exists public.workspaces (
@@ -36,6 +39,8 @@ create table if not exists public.workspaces (
 
 alter table public.workspaces add column if not exists icon text not null default 'Sparkles';
 alter table public.workspaces add column if not exists color text not null default '#1E3A2F';
+alter table public.workspaces add column if not exists board_background text not null default 'default';
+alter table public.workspaces add column if not exists is_personal boolean not null default false;
 alter table public.workspaces add column if not exists updated_at timestamptz not null default now();
 
 -- 3. WORKSPACE MEMBERS
@@ -46,6 +51,8 @@ create table if not exists public.workspace_members (
   joined_at timestamptz not null default now(),
   primary key (workspace_id, user_id)
 );
+
+alter table public.workspace_members add column if not exists responsibility text not null default 'Member';
 
 -- 4. WORKSPACE INVITATIONS
 create table if not exists public.workspace_invitations (
@@ -304,6 +311,38 @@ end;
 $$;
 revoke all on function public.join_workspace(text) from public;
 grant execute on function public.join_workspace(text) to authenticated;
+
+-- Role & Responsibility Assignment (Only Owner or Admin can assign roles)
+create or replace function public.update_workspace_member_role(
+  target_workspace uuid,
+  target_user uuid,
+  new_role text,
+  new_responsibility text default 'Member'
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null then raise exception 'Authentication required'; end if;
+  if not public.is_workspace_admin(target_workspace) then
+    raise exception 'Permission denied: Only workspace admins or owners can assign roles';
+  end if;
+  if new_role not in ('admin', 'member') then
+    raise exception 'Invalid role assignment';
+  end if;
+
+  update public.workspace_members
+  set role = new_role,
+      responsibility = coalesce(new_responsibility, 'Member')
+  where workspace_id = target_workspace and user_id = target_user;
+
+  return true;
+end;
+$$;
+revoke all on function public.update_workspace_member_role(uuid, uuid, text, text) from public;
+grant execute on function public.update_workspace_member_role(uuid, uuid, text, text) to authenticated;
 
 -- Automatic Profile Creation Trigger
 create or replace function public.handle_new_user()

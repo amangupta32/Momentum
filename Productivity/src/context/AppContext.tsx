@@ -57,6 +57,7 @@ interface AppContextType {
   users: User[];
   currentUser: User;
   setCurrentUser: (userId: string) => void;
+  updateUserProfile: (name: string, avatar: string, title?: string, bio?: string) => Promise<void>;
   workspaces: Workspace[];
   activeWorkspace: Workspace;
   setActiveWorkspace: (workspaceId: string) => void;
@@ -64,6 +65,20 @@ interface AppContextType {
   createWorkspace: (name: string, description?: string) => Promise<string>;
   createInvitation: (hours?: number, uses?: number) => Promise<string>;
   joinWorkspace: (code: string) => Promise<boolean>;
+
+  // Board Customization & Onboarding
+  boardBackground: string;
+  setBoardBackground: (bgId: string) => Promise<void>;
+  onboardingCompleted: boolean;
+  setOnboardingCompleted: (completed: boolean) => Promise<void>;
+  restartOnboarding: () => void;
+
+  // Discord-style Team Member Panel & Profile Modal
+  selectedMemberForProfile: User | null;
+  setSelectedMemberForProfile: (member: User | null) => void;
+  membersPanelOpen: boolean;
+  setMembersPanelOpen: (open: boolean) => void;
+  toggleMembersPanel: () => void;
 
   // Data
   goals: Goal[];
@@ -152,6 +167,26 @@ export const AppProvider: React.FC<{
   const [weeklyReviews, setWeeklyReviews] = useState<WeeklyReview[]>(() =>
     StorageService.getWeeklyReviews()
   );
+
+  // Board Background & Onboarding states
+  const [boardBackground, setBoardBackgroundState] = useState<string>(() => {
+    return StorageService.getString('board_bg', 'default') || 'default';
+  });
+
+  const [onboardingCompleted, setOnboardingCompletedState] = useState<boolean>(() => {
+    return Boolean(
+      initialUser.onboardingCompleted ||
+      StorageService.getBoolean('onboarding_done', false)
+    );
+  });
+
+  // Discord-style Team Member Drawer & Selected Member for Profile
+  const [selectedMemberForProfile, setSelectedMemberForProfile] = useState<User | null>(null);
+  const [membersPanelOpen, setMembersPanelOpen] = useState<boolean>(false);
+
+  const toggleMembersPanel = useCallback(() => {
+    setMembersPanelOpen((prev) => !prev);
+  }, []);
 
   // Toasts
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -382,6 +417,76 @@ export const AppProvider: React.FC<{
     setCurrentUserIdState(userId);
     StorageService.setCurrentUserId(userId);
   }, []);
+
+  const updateUserProfile = useCallback(
+    async (name: string, avatar: string, title?: string, bio?: string) => {
+      const cleanName = name.trim() || 'Momentum Member';
+      const cleanAvatar = avatar.trim() || 'lion';
+      const cleanTitle = title?.trim() || currentUser.title || 'Contributor';
+      const cleanBio = bio !== undefined ? bio.trim() : currentUser.bio || '';
+
+      const updatedUser: User = {
+        ...currentUser,
+        name: cleanName,
+        avatar: cleanAvatar,
+        title: cleanTitle,
+        bio: cleanBio,
+      };
+
+      setUsers((prev) => prev.map((u) => (u.id === currentUser.id ? updatedUser : u)));
+      StorageService.saveUsers([updatedUser]);
+
+      if (isSupabaseConfigured) {
+        try {
+          await SupabaseDb.updateProfile(currentUser.id, {
+            name: cleanName,
+            avatar: cleanAvatar,
+            title: cleanTitle,
+            bio: cleanBio,
+          });
+          await supabase.auth.updateUser({
+            data: { full_name: cleanName, avatar_url: cleanAvatar },
+          });
+          showToast('Profile and animal avatar updated!', 'success');
+        } catch (err) {
+          console.error('[Supabase] Error updating profile:', err);
+          showToast('Updated locally, but cloud sync failed.', 'warning');
+        }
+      } else {
+        showToast('Profile and animal avatar updated!', 'success');
+      }
+    },
+    [currentUser, showToast]
+  );
+
+  const setBoardBackground = useCallback(
+    async (bgId: string) => {
+      setBoardBackgroundState(bgId);
+      StorageService.setString('board_bg', bgId);
+      if (isSupabaseConfigured && activeWorkspace.id) {
+        await SupabaseDb.updateWorkspaceBoard(activeWorkspace.id, bgId);
+      }
+      showToast('Board background updated!', 'success');
+    },
+    [activeWorkspace.id, showToast]
+  );
+
+  const setOnboardingCompleted = useCallback(
+    async (completed: boolean) => {
+      setOnboardingCompletedState(completed);
+      StorageService.setBoolean('onboarding_done', completed);
+      if (isSupabaseConfigured && currentUser.id) {
+        await SupabaseDb.updateOnboardingStatus(currentUser.id, completed);
+      }
+    },
+    [currentUser.id]
+  );
+
+  const restartOnboarding = useCallback(() => {
+    setOnboardingCompletedState(false);
+    StorageService.setBoolean('onboarding_done', false);
+    showToast('Restarting guided tour…', 'info');
+  }, [showToast]);
 
   const setActiveWorkspace = useCallback((workspaceId: string) => {
     setActiveWorkspaceIdState(workspaceId);
@@ -880,6 +985,7 @@ export const AppProvider: React.FC<{
         users,
         currentUser,
         setCurrentUser,
+        updateUserProfile,
         workspaces,
         activeWorkspace,
         setActiveWorkspace,
@@ -887,6 +993,16 @@ export const AppProvider: React.FC<{
         createWorkspace,
         createInvitation,
         joinWorkspace,
+        boardBackground,
+        setBoardBackground,
+        onboardingCompleted,
+        setOnboardingCompleted,
+        restartOnboarding,
+        selectedMemberForProfile,
+        setSelectedMemberForProfile,
+        membersPanelOpen,
+        setMembersPanelOpen,
+        toggleMembersPanel,
         goals,
         tasks,
         notes,

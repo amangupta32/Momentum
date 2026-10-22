@@ -32,24 +32,31 @@ export function toAppUser(profile: {
   role?: string;
   bio?: string;
   streak_days?: number;
+  onboarding_completed?: boolean;
 }, fallbackEmail = ''): User {
   const name = profile.full_name || 'Momentum Member';
+  const animalList = ['lion', 'tiger', 'wolf', 'cheetah', 'dolphin', 'fox', 'dog', 'owl', 'rabbit', 'koala'];
+  const fallbackIndex = Math.abs(profile.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)) % animalList.length;
+  const rawAvatar = profile.avatar_url?.trim();
+  const avatar = rawAvatar && rawAvatar.length > 0 && !rawAvatar.includes('dicebear')
+    ? rawAvatar
+    : animalList[fallbackIndex];
+
   return {
     id: profile.id,
     name,
     email: profile.email || fallbackEmail,
-    avatar:
-      profile.avatar_url ||
-      `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || profile.id)}`,
+    avatar,
     role: (profile.role as User['role']) || 'Member',
     title: profile.title || 'Contributor',
     bio: profile.bio || '',
     streakDays: profile.streak_days || 0,
+    onboardingCompleted: Boolean(profile.onboarding_completed),
   };
 }
 
 export function toAppWorkspace(
-  db: { id: string; name: string; description?: string; icon?: string; color?: string },
+  db: { id: string; name: string; description?: string; icon?: string; color?: string; owner_id?: string; board_background?: string; is_personal?: boolean },
   memberIds: string[] = []
 ): Workspace {
   return {
@@ -60,6 +67,9 @@ export function toAppWorkspace(
     icon: db.icon || 'Sparkles',
     color: db.color || '#1E3A2F',
     members: memberIds,
+    ownerId: db.owner_id,
+    boardBackground: db.board_background || 'default',
+    isPersonal: Boolean(db.is_personal),
   };
 }
 
@@ -132,6 +142,7 @@ export function toAppTask(db: {
     labels: Array.isArray(db.labels) ? db.labels : [],
     checklist: Array.isArray(db.checklist) ? db.checklist : [],
     isTodayFocus: Boolean(db.is_today_focus),
+    isPrivate: Boolean(db.is_private),
     createdAt: db.created_at,
     updatedAt: db.updated_at,
   };
@@ -459,6 +470,7 @@ export const SupabaseDb = {
       labels: task.labels || [],
       checklist: task.checklist || [],
       is_today_focus: Boolean(task.isTodayFocus),
+      is_private: Boolean(task.isPrivate),
     };
 
     const { data, error } = await supabase.from('tasks').insert(payload).select().single();
@@ -481,9 +493,34 @@ export const SupabaseDb = {
     if (updates.labels !== undefined) payload.labels = updates.labels;
     if (updates.checklist !== undefined) payload.checklist = updates.checklist;
     if (updates.isTodayFocus !== undefined) payload.is_today_focus = updates.isTodayFocus;
+    if (updates.isPrivate !== undefined) payload.is_private = updates.isPrivate;
 
     const { error } = await supabase.from('tasks').update(payload).eq('id', id);
     if (error) throw error;
+  },
+
+  async updateWorkspaceBoard(workspaceId: string, background: string): Promise<void> {
+    if (!isSupabaseConfigured || !workspaceId) return;
+    try {
+      await supabase
+        .from('workspaces')
+        .update({ board_background: background, updated_at: new Date().toISOString() })
+        .eq('id', workspaceId);
+    } catch (e) {
+      console.warn('[Supabase] Could not persist workspace board:', e);
+    }
+  },
+
+  async updateOnboardingStatus(userId: string, completed: boolean): Promise<void> {
+    if (!isSupabaseConfigured || !userId) return;
+    try {
+      await supabase
+        .from('profiles')
+        .update({ onboarding_completed: completed, updated_at: new Date().toISOString() })
+        .eq('id', userId);
+    } catch (e) {
+      console.warn('[Supabase] Could not persist onboarding status:', e);
+    }
   },
 
   async deleteTask(id: string): Promise<void> {

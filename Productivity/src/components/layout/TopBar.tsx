@@ -5,14 +5,27 @@ import {
   Plus,
   Menu,
   ChevronRight,
-  Check,
   CheckCheck,
   Flame,
   ExternalLink,
+  Users,
+  HelpCircle,
+  Settings,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { AnimalAvatar } from '../avatars/AnimalAvatar';
 
-export const TopBar: React.FC = () => {
+interface TopBarProps {
+  onToggleMembers?: () => void;
+  membersPanelOpen?: boolean;
+  onReplayOnboarding?: () => void;
+}
+
+export const TopBar: React.FC<TopBarProps> = ({
+  onToggleMembers,
+  membersPanelOpen = false,
+  onReplayOnboarding,
+}) => {
   const {
     activeTab,
     setActiveTab,
@@ -35,17 +48,17 @@ export const TopBar: React.FC = () => {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const tabLabels: Record<string, string> = {
-    home: 'My Day',
-    my_goals: 'Personal Goals',
-    group_goals: 'Group Goals',
-    task_board: 'Task Board',
+    home: 'Overview',
+    my_goals: 'Personal Tasks & Goals',
+    group_goals: 'Projects & Goals',
+    task_board: 'Team Tasks',
     commitment_wall: 'Commitment Wall',
     blocker_radar: 'Blocker Radar',
     notes: 'Notes & Docs',
-    team: 'Team Workspace',
+    team: 'Members & Roles',
     activity: 'Activity Feed',
     weekly_review: 'Weekly Reset',
-    settings: 'Settings',
+    settings: 'Settings & Profile',
   };
 
   return (
@@ -71,13 +84,13 @@ export const TopBar: React.FC = () => {
         </nav>
       </div>
 
-      {/* Right: Search, Quick-Create, Notifications, User Profile */}
+      {/* Right: Search, Quick-Create, Notifications, Member Toggle, User Profile */}
       <div className="flex items-center gap-2 sm:gap-3">
         {/* Search trigger */}
         <button
           onClick={() => setSearchOpen(true)}
           className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-[#E8E4DA] text-[#737C76] hover:border-[#1E3A2F]/40 hover:text-[#1C221F] text-xs transition-all shadow-2xs group"
-          title="Search anything (Cmd+K)"
+          title="Search workspace (Cmd+K)"
         >
           <Search size={14} className="group-hover:text-[#1E3A2F]" />
           <span className="hidden md:inline text-left w-32 truncate">Search workspace...</span>
@@ -86,14 +99,42 @@ export const TopBar: React.FC = () => {
           </kbd>
         </button>
 
-        {/* Quick create button */}
+        {/* Quick create button with onboarding ID */}
         <button
+          id="onboarding-create-btn"
           onClick={() => openQuickCreate()}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1E3A2F] text-white text-xs font-medium hover:bg-[#162A22] transition-colors shadow-xs active:scale-[0.98]"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1E3A2F] text-white text-xs font-semibold hover:bg-[#162A22] transition-colors shadow-xs active:scale-[0.98] cursor-pointer"
+          title="Create a task, goal, or note"
         >
           <Plus size={15} />
           <span className="hidden sm:inline">Create</span>
         </button>
+
+        {/* Toggle Discord-style Member Sidebar */}
+        {onToggleMembers && (
+          <button
+            onClick={onToggleMembers}
+            className={`p-2 rounded-xl border transition-all ${
+              membersPanelOpen
+                ? 'bg-[#E7F0E8] text-[#1E3A2F] border-[#CDE0D0]'
+                : 'bg-white text-[#5C6560] border-[#E8E4DA] hover:text-[#1C221F] hover:bg-[#FAF8F5]'
+            }`}
+            title="Toggle Team Members panel"
+          >
+            <Users size={17} />
+          </button>
+        )}
+
+        {/* Tour / Replay Onboarding Button */}
+        {onReplayOnboarding && (
+          <button
+            onClick={onReplayOnboarding}
+            className="p-2 rounded-xl bg-white border border-[#E8E4DA] text-[#5C6560] hover:text-[#1C221F] hover:bg-[#FAF8F5] transition-all"
+            title="Interactive App Tour"
+          >
+            <HelpCircle size={17} />
+          </button>
+        )}
 
         {/* Notifications Popover */}
         <div className="relative">
@@ -102,12 +143,12 @@ export const TopBar: React.FC = () => {
               setNotificationsOpen(!notificationsOpen);
               setProfileOpen(false);
             }}
-            className="relative p-2 rounded-lg text-[#5C6560] hover:text-[#1C221F] hover:bg-white border border-transparent hover:border-[#E8E4DA] transition-all"
+            className="relative p-2 rounded-xl bg-white text-[#5C6560] hover:text-[#1C221F] border border-[#E8E4DA] hover:bg-[#FAF8F5] transition-all"
             aria-label="View notifications"
           >
-            <Bell size={18} />
+            <Bell size={17} />
             {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-[#FAF8F5]" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full" />
             )}
           </button>
 
@@ -117,7 +158,7 @@ export const TopBar: React.FC = () => {
                 className="fixed inset-0 z-20"
                 onClick={() => setNotificationsOpen(false)}
               />
-              <div className="absolute right-0 top-11 w-80 sm:w-96 bg-white rounded-xl shadow-xl border border-[#E8E4DA] p-0 z-30 animate-scale-in overflow-hidden">
+              <div className="absolute right-0 top-11 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-[#E8E4DA] p-0 z-30 animate-in fade-in overflow-hidden">
                 <div className="p-3 border-b border-[#E8E4DA] flex items-center justify-between bg-[#FAF8F5]">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold text-[#1C221F]">Notifications</span>
@@ -181,33 +222,29 @@ export const TopBar: React.FC = () => {
                     ))
                   )}
                 </div>
-
-                <div className="p-2 border-t border-[#E8E4DA] bg-[#FAF8F5] text-center">
-                  <span className="text-[10px] text-[#8E9892]">
-                    Simulated static workspace notifications
-                  </span>
-                </div>
               </div>
             </>
           )}
         </div>
 
-        {/* User Profile / Switcher */}
+        {/* User Profile Pill with Cartoon Animal Avatar */}
         <div className="relative">
           <button
             onClick={() => {
               setProfileOpen(!profileOpen);
               setNotificationsOpen(false);
             }}
-            className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-full hover:bg-white border border-transparent hover:border-[#E8E4DA] transition-all"
-            title="User Profile & Demo Switcher"
+            className="flex items-center gap-2 p-1 pl-1 pr-2.5 rounded-full hover:bg-white border border-transparent hover:border-[#E8E4DA] transition-all cursor-pointer"
+            title="User Profile & Settings"
           >
-            <img
-              src={currentUser.avatar}
-              alt={currentUser.name}
-              className="w-7 h-7 rounded-full object-cover ring-1 ring-[#1E3A2F]/20"
+            <AnimalAvatar
+              avatar={currentUser.avatar}
+              name={currentUser.name}
+              size={32}
+              showBadge
+              status="online"
             />
-            <span className="text-xs font-medium text-[#1C221F] hidden md:inline truncate max-w-[100px]">
+            <span className="text-xs font-semibold text-[#1C221F] hidden md:inline truncate max-w-[120px]">
               {currentUser.name}
             </span>
           </button>
@@ -215,20 +252,22 @@ export const TopBar: React.FC = () => {
           {profileOpen && (
             <>
               <div className="fixed inset-0 z-20" onClick={() => setProfileOpen(false)} />
-              <div className="absolute right-0 top-11 w-72 bg-white rounded-xl shadow-xl border border-[#E8E4DA] p-3 z-30 animate-scale-in">
+              <div className="absolute right-0 top-11 w-72 bg-white rounded-2xl shadow-xl border border-[#E8E4DA] p-4 z-30 animate-in fade-in">
                 {/* User card */}
                 <div className="flex items-center gap-3 pb-3 border-b border-[#E8E4DA]">
-                  <img
-                    src={currentUser.avatar}
-                    alt={currentUser.name}
-                    className="w-10 h-10 rounded-full object-cover ring-2 ring-[#1E3A2F]"
+                  <AnimalAvatar
+                    avatar={currentUser.avatar}
+                    name={currentUser.name}
+                    size={46}
+                    showBadge
+                    status="online"
                   />
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs font-bold text-[#1C221F] truncate">
+                    <div className="text-sm font-bold text-[#1C221F] truncate">
                       {currentUser.name}
                     </div>
-                    <div className="text-[11px] text-[#5C6560] truncate">{currentUser.title}</div>
-                    <div className="flex items-center gap-1 text-[10px] text-amber-700 font-medium mt-0.5">
+                    <div className="text-[11px] text-[#737C76] truncate">{currentUser.email}</div>
+                    <div className="flex items-center gap-1 text-[10px] text-amber-700 font-medium mt-1">
                       <Flame size={12} className="fill-amber-500 text-amber-500" />
                       <span>{streakDays} Day Momentum Streak</span>
                     </div>
@@ -236,26 +275,33 @@ export const TopBar: React.FC = () => {
                 </div>
 
                 {/* Actions */}
-                <div className="mt-3 pt-2.5 border-t border-[#E8E4DA] space-y-1">
+                <div className="mt-3 pt-1 space-y-1">
                   <button
                     onClick={() => {
-                      setActiveTab('weekly_review');
+                      setActiveTab('settings');
                       setProfileOpen(false);
                     }}
-                    className="w-full flex items-center justify-between text-left px-2 py-1.5 text-xs text-[#4A524D] hover:bg-[#FAF8F5] rounded-lg transition-colors"
+                    className="w-full flex items-center justify-between text-left px-2.5 py-2 text-xs font-medium text-[#4A524D] hover:bg-[#FAF8F5] rounded-xl transition-colors"
                   >
-                    <span>Run Weekly Reset</span>
-                    <ExternalLink size={12} className="text-[#8E9892]" />
+                    <span className="flex items-center gap-2">
+                      <Settings size={14} />
+                      Profile & Animal Avatar
+                    </span>
+                    <ChevronRight size={13} className="text-[#8E9892]" />
                   </button>
                   <button
                     onClick={async () => {
                       setProfileOpen(false);
-                      try { await signOut(); } catch { /* Auth UI reports the next session state. */ }
+                      try {
+                        await signOut();
+                      } catch {
+                        /* Ignore */
+                      }
                     }}
-                    className="w-full flex items-center justify-between text-left px-2 py-1.5 text-xs text-rose-700 hover:bg-rose-50 rounded-lg transition-colors"
+                    className="w-full flex items-center justify-between text-left px-2.5 py-2 text-xs font-medium text-rose-700 hover:bg-rose-50 rounded-xl transition-colors"
                   >
                     <span>Sign out</span>
-                    <ExternalLink size={12} className="text-rose-500" />
+                    <ExternalLink size={13} className="text-rose-500" />
                   </button>
                 </div>
               </div>

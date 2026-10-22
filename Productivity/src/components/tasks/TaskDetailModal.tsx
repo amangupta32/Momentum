@@ -38,6 +38,7 @@ export const TaskDetailModal: React.FC = () => {
   const [assigneeId, setAssigneeId] = useState<string>('');
   const [dueDate, setDueDate] = useState('');
   const [linkedGoalId, setLinkedGoalId] = useState<string>('');
+  const [isPrivate, setIsPrivate] = useState<boolean>(false);
   const [newChecklistTitle, setNewChecklistTitle] = useState('');
 
   useEffect(() => {
@@ -49,6 +50,7 @@ export const TaskDetailModal: React.FC = () => {
       setAssigneeId(task.assigneeId || '');
       setDueDate(task.dueDate || '');
       setLinkedGoalId(task.linkedGoalId || '');
+      setIsPrivate(Boolean(task.isPrivate));
       setNewChecklistTitle('');
     }
   }, [task]);
@@ -66,6 +68,7 @@ export const TaskDetailModal: React.FC = () => {
       assigneeId: assigneeId || null,
       dueDate,
       linkedGoalId: linkedGoalId || null,
+      isPrivate,
     });
     setSelectedTaskId(null);
   };
@@ -165,6 +168,37 @@ export const TaskDetailModal: React.FC = () => {
               placeholder="Add context, references, or checklist items..."
               className="w-full p-2.5 text-xs rounded-xl border border-[#E8E4DA] focus:border-[#1E3A2F] outline-none"
             />
+          </div>
+
+          {/* Task Visibility Scope */}
+          <div>
+            <label className="block text-[11px] font-semibold text-[#8E9892] uppercase tracking-wider mb-1">
+              Task Visibility & Scope
+            </label>
+            <div className="grid grid-cols-2 gap-2 bg-[#FAF8F5] p-1 rounded-xl border border-[#E8E4DA]">
+              <button
+                type="button"
+                onClick={() => setIsPrivate(false)}
+                className={`py-1.5 px-3 rounded-lg text-xs font-semibold transition-all ${
+                  !isPrivate
+                    ? 'bg-[#1E3A2F] text-white shadow-2xs'
+                    : 'text-[#5C6560] hover:text-[#1C221F]'
+                }`}
+              >
+                Team Task (Shared)
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsPrivate(true)}
+                className={`py-1.5 px-3 rounded-lg text-xs font-semibold transition-all ${
+                  isPrivate
+                    ? 'bg-[#1E3A2F] text-white shadow-2xs'
+                    : 'text-[#5C6560] hover:text-[#1C221F]'
+                }`}
+              >
+                Personal Task (Private)
+              </button>
+            </div>
           </div>
 
           {/* Properties Grid */}

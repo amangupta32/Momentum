@@ -9,6 +9,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { AnimalAvatar } from '../avatars/AnimalAvatar';
 
 export const ActivityView: React.FC = () => {
   const { activities, users, activeWorkspace, setSelectedTaskId, setSelectedGoalId } = useApp();
@@ -87,10 +88,11 @@ export const ActivityView: React.FC = () => {
                     {getEventIcon(item.type)}
                   </div>
 
-                  <img
-                    src={user?.avatar}
-                    alt={user?.name}
-                    className="w-7 h-7 rounded-full object-cover shrink-0 ring-1 ring-[#E8E4DA]"
+                  <AnimalAvatar
+                    avatar={user?.avatar}
+                    name={user?.name}
+                    size={28}
+                    className="shrink-0 ring-1 ring-[#E8E4DA]"
                   />
 
                   <div className="min-w-0 flex-1">

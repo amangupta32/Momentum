@@ -13,6 +13,7 @@ import {
   Share2,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { AnimalAvatar } from '../avatars/AnimalAvatar';
 
 export const GoalDetailModal: React.FC = () => {
   const {
@@ -159,10 +160,10 @@ export const GoalDetailModal: React.FC = () => {
             <div>
               <div className="text-[10px] text-[#8E9892] uppercase font-semibold">Owner</div>
               <div className="font-medium text-[#1C221F] mt-0.5 flex items-center gap-1.5 truncate">
-                <img
-                  src={owner?.avatar}
-                  alt={owner?.name}
-                  className="w-4 h-4 rounded-full object-cover shrink-0"
+                <AnimalAvatar
+                  avatar={owner?.avatar}
+                  name={owner?.name}
+                  size={18}
                 />
                 <span className="truncate">{owner?.name || 'Unassigned'}</span>
               </div>

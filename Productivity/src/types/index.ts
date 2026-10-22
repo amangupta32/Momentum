@@ -17,6 +17,7 @@ export interface User {
   title: string;
   bio: string;
   streakDays: number;
+  onboardingCompleted?: boolean;
 }
 
 export interface Workspace {
@@ -27,6 +28,9 @@ export interface Workspace {
   icon: string;
   color: string;
   members: string[]; // User IDs
+  ownerId?: string;
+  boardBackground?: string;
+  isPersonal?: boolean;
 }
 
 export interface ChecklistItem {
@@ -77,6 +81,7 @@ export interface Task {
   createdAt: string;
   updatedAt: string;
   isTodayFocus?: boolean;
+  isPrivate?: boolean;
 }
 
 export interface Note {

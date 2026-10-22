@@ -9,6 +9,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { AnimalAvatar } from '../avatars/AnimalAvatar';
 
 export const CommitmentWallView: React.FC = () => {
   const {
@@ -138,10 +139,10 @@ export const CommitmentWallView: React.FC = () => {
                 {/* Owner & Target Date */}
                 <div className="pt-3 border-t border-[#F2EFE9] flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
-                    <img
-                      src={owner?.avatar}
-                      alt={owner?.name}
-                      className="w-6 h-6 rounded-full object-cover ring-2 ring-[#1E3A2F]/20"
+                    <AnimalAvatar
+                      avatar={owner?.avatar}
+                      name={owner?.name}
+                      size={24}
                     />
                     <div>
                       <div className="text-[10px] text-[#8E9892] uppercase font-semibold">

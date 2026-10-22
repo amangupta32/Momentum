@@ -110,7 +110,21 @@ export const StorageService = {
     safeSetItem('weekly_reviews', reviews);
   },
 
+  getString(key: string, fallback = ''): string {
+    return localStorage.getItem(storageKey(key)) || fallback;
+  },
+  setString(key: string, val: string): void {
+    localStorage.setItem(storageKey(key), val);
+  },
 
+  getBoolean(key: string, fallback = false): boolean {
+    const val = localStorage.getItem(storageKey(key));
+    if (val === null) return fallback;
+    return val === 'true';
+  },
+  setBoolean(key: string, val: boolean): void {
+    localStorage.setItem(storageKey(key), String(val));
+  },
 };
 
 // ==========================================

@@ -10,8 +10,13 @@ import {
   Check,
   X,
   Shield,
+  Clock,
+  CheckCircle2,
+  Lock,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { AnimalAvatar } from '../avatars/AnimalAvatar';
+import { MemberProfileModal } from './MemberProfileModal';
 
 export const TeamView: React.FC = () => {
   const {
@@ -23,12 +28,12 @@ export const TeamView: React.FC = () => {
     setSelectedTaskId,
     setSelectedGoalId,
     currentUser,
-    setCurrentUser,
     createInvitation,
     showToast,
   } = useApp();
 
   const [selectedMemberId, setSelectedMemberId] = useState<string>(currentUser.id);
+  const [profileModalMember, setProfileModalMember] = useState<typeof currentUser | null>(null);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -36,9 +41,9 @@ export const TeamView: React.FC = () => {
 
   const selectedMember = users.find((u) => u.id === selectedMemberId) || users[0] || currentUser;
 
-  // Workspace tasks assigned to this member
+  // Workspace tasks assigned to this member (shared team tasks only)
   const memberTasks = tasks.filter(
-    (t) => t.workspaceId === activeWorkspace.id && t.assigneeId === selectedMember.id
+    (t) => t.workspaceId === activeWorkspace.id && t.assigneeId === selectedMember.id && !t.isPrivate
   );
 
   const pendingTasks = memberTasks.filter((t) => t.status !== 'done');
@@ -50,6 +55,7 @@ export const TeamView: React.FC = () => {
   );
 
   const getMemberRole = (userId: string): string => {
+    if (activeWorkspace.ownerId === userId) return 'Owner';
     const mem = workspaceMembers.find((m) => m.userId === userId);
     if (!mem) return 'Member';
     return mem.role.charAt(0).toUpperCase() + mem.role.slice(1);
@@ -83,10 +89,10 @@ export const TeamView: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#737C76]">
             <Users size={14} className="text-[#1E3A2F]" />
-            <span>Team Responsibility</span>
+            <span>Team Workspaces & Roles</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-[#1C221F] font-display mt-0.5">
-            Who is Doing What?
+            Team Members & Workloads
           </h1>
           <p className="text-xs text-[#5C6560] mt-1">
             Transparent workloads, shared accountability, and individual contributions in {activeWorkspace.name}.
@@ -96,7 +102,7 @@ export const TeamView: React.FC = () => {
         <button
           onClick={handleGenerateInvite}
           disabled={isGenerating}
-          className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-white bg-[#1E3A2F] hover:bg-[#162A22] rounded-xl transition-all shadow-xs self-start sm:self-auto shrink-0"
+          className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-white bg-[#1E3A2F] hover:bg-[#162A22] rounded-xl transition-all shadow-xs self-start sm:self-auto shrink-0 cursor-pointer"
         >
           <UserPlus size={15} />
           <span>{isGenerating ? 'Generating…' : 'Invite Teammate'}</span>
@@ -115,7 +121,7 @@ export const TeamView: React.FC = () => {
           <div className="space-y-1">
             {users.map((member) => {
               const activeCount = tasks.filter(
-                (t) => t.workspaceId === activeWorkspace.id && t.assigneeId === member.id && t.status !== 'done'
+                (t) => t.workspaceId === activeWorkspace.id && t.assigneeId === member.id && !t.isPrivate && t.status !== 'done'
               ).length;
 
               const isSelected = selectedMember.id === member.id;
@@ -132,10 +138,12 @@ export const TeamView: React.FC = () => {
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <img
-                      src={member.avatar}
-                      alt={member.name}
-                      className="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-[#1E3A2F]/20"
+                    <AnimalAvatar
+                      avatar={member.avatar}
+                      name={member.name}
+                      size={36}
+                      showBadge
+                      status="online"
                     />
                     <div className="min-w-0">
                       <div className="font-bold text-xs text-[#1C221F] truncate flex items-center gap-1.5">
@@ -167,13 +175,6 @@ export const TeamView: React.FC = () => {
               );
             })}
           </div>
-
-          {users.length === 1 && (
-            <div className="p-3 text-center text-xs text-[#737C76] bg-[#FAF8F5] rounded-xl border border-dashed border-[#E8E4DA] mt-3">
-              <p className="font-medium text-[#1C221F]">You're currently solo</p>
-              <p className="text-[11px] mt-0.5">Click "Invite Teammate" to share goals and tasks with your team.</p>
-            </div>
-          )}
         </div>
 
         {/* Member Profile & Assigned Work: 8 cols */}
@@ -182,10 +183,13 @@ export const TeamView: React.FC = () => {
           <div className="bg-white rounded-2xl border border-[#E8E4DA] p-6 shadow-2xs space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <img
-                  src={selectedMember.avatar}
-                  alt={selectedMember.name}
-                  className="w-14 h-14 rounded-full object-cover ring-2 ring-[#1E3A2F]"
+                <AnimalAvatar
+                  avatar={selectedMember.avatar}
+                  name={selectedMember.name}
+                  size={56}
+                  showBadge
+                  status="online"
+                  className="ring-2 ring-[#1E3A2F]"
                 />
                 <div>
                   <h2 className="text-xl font-bold text-[#1C221F] font-display">
@@ -205,14 +209,14 @@ export const TeamView: React.FC = () => {
                 </div>
               </div>
 
-              {selectedMember.id !== currentUser.id && (
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setCurrentUser(selectedMember.id)}
-                  className="px-3.5 py-1.5 text-xs font-semibold text-[#1E3A2F] bg-[#FAF8F5] hover:bg-[#F2EFE9] border border-[#E8E4DA] rounded-xl transition-colors shrink-0"
+                  onClick={() => setProfileModalMember(selectedMember)}
+                  className="px-3.5 py-1.5 text-xs font-semibold text-white bg-[#1E3A2F] hover:bg-[#162A22] rounded-xl transition-colors shadow-xs"
                 >
-                  View as this Member
+                  Full Profile & Tasks
                 </button>
-              )}
+              </div>
             </div>
 
             {selectedMember.bio && (
@@ -223,157 +227,140 @@ export const TeamView: React.FC = () => {
 
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-3 gap-3 pt-2 text-center text-xs">
-              <div className="bg-[#FAF8F5] p-3 rounded-xl border border-[#E8E4DA]">
-                <div className="text-base font-bold text-[#1C221F] font-mono">
-                  {pendingTasks.length}
-                </div>
-                <div className="text-[10px] text-[#8E9892] uppercase font-semibold mt-0.5">
-                  Tasks In Progress
-                </div>
+              <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#E8E4DA]">
+                <div className="text-xl font-bold text-[#1C221F]">{pendingTasks.length}</div>
+                <div className="text-[11px] text-[#737C76]">Pending Team Tasks</div>
               </div>
-
-              <div className="bg-[#FAF8F5] p-3 rounded-xl border border-[#E8E4DA]">
-                <div className="text-base font-bold text-emerald-700 font-mono">
-                  {completedTasks.length}
-                </div>
-                <div className="text-[10px] text-[#8E9892] uppercase font-semibold mt-0.5">
-                  Tasks Delivered
-                </div>
+              <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                <div className="text-xl font-bold text-emerald-800">{completedTasks.length}</div>
+                <div className="text-[11px] text-emerald-700">Completed in Team</div>
               </div>
-
-              <div className="bg-[#FAF8F5] p-3 rounded-xl border border-[#E8E4DA]">
-                <div className="text-base font-bold text-[#1E3A2F] font-mono">
-                  {memberGoals.length}
-                </div>
-                <div className="text-[10px] text-[#8E9892] uppercase font-semibold mt-0.5">
-                  Goals Owned
-                </div>
+              <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#E8E4DA]">
+                <div className="text-xl font-bold text-[#1C221F]">{memberGoals.length}</div>
+                <div className="text-[11px] text-[#737C76]">Goals Owned</div>
               </div>
             </div>
           </div>
 
-          {/* Active Tasks Assigned */}
-          <div className="bg-white rounded-2xl border border-[#E8E4DA] p-5 shadow-2xs space-y-3">
-            <h3 className="text-xs font-bold text-[#1C221F] uppercase tracking-wider flex items-center gap-2">
-              <Layers size={14} className="text-[#1E3A2F]" />
-              Current Assigned Tasks ({pendingTasks.length})
-            </h3>
-
-            <div className="space-y-2">
-              {pendingTasks.length === 0 ? (
-                <div className="p-4 text-center text-xs text-[#8E9892] bg-[#FAF8F5] rounded-xl border border-dashed border-[#E8E4DA]">
-                  No pending tasks right now. Workload is clear!
-                </div>
-              ) : (
-                pendingTasks.map((t) => (
-                  <div
-                    key={t.id}
-                    onClick={() => setSelectedTaskId(t.id)}
-                    className="cursor-pointer p-3 rounded-xl border border-[#E8E4DA] hover:border-[#1E3A2F] hover:bg-[#FAF8F5] flex items-center justify-between text-xs transition-colors"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="font-semibold text-xs text-[#1C221F] truncate">
-                        {t.title}
-                      </div>
-                      <div className="text-[11px] text-[#737C76] flex items-center gap-2 mt-0.5">
-                        <span className="capitalize">{t.status.replace('_', ' ')}</span>
-                        <span>•</span>
-                        <span>Due {t.dueDate}</span>
-                      </div>
-                    </div>
-                    <ArrowRight size={14} className="text-[#B8B0A0] shrink-0 ml-2" />
-                  </div>
-                ))
-              )}
+          {/* Assigned Team Tasks Section */}
+          <div className="bg-white rounded-2xl border border-[#E8E4DA] p-6 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between border-b border-[#E8E4DA] pb-3">
+              <div>
+                <h3 className="font-bold text-sm text-[#1C221F]">
+                  Shared Team Tasks ({memberTasks.length})
+                </h3>
+                <p className="text-xs text-[#737C76] flex items-center gap-1 mt-0.5">
+                  <Lock size={11} className="text-[#1E3A2F]" />
+                  <span>Personal private tasks are isolated and not shown to teammates</span>
+                </p>
+              </div>
             </div>
-          </div>
 
-          {/* Goals Owned by Member */}
-          {memberGoals.length > 0 && (
-            <div className="bg-white rounded-2xl border border-[#E8E4DA] p-5 shadow-2xs space-y-3">
-              <h3 className="text-xs font-bold text-[#1C221F] uppercase tracking-wider flex items-center gap-2">
-                <Target size={14} className="text-[#1E3A2F]" />
-                Goals Owned ({memberGoals.length})
-              </h3>
-
+            {memberTasks.length === 0 ? (
+              <div className="text-center py-8 text-xs text-[#8E9892] border border-dashed border-[#E8E4DA] rounded-xl">
+                No shared team tasks currently assigned to {selectedMember.name}.
+              </div>
+            ) : (
               <div className="space-y-2">
-                {memberGoals.map((g) => (
+                {memberTasks.map((task) => (
                   <div
-                    key={g.id}
-                    onClick={() => setSelectedGoalId(g.id)}
-                    className="cursor-pointer p-3 rounded-xl border border-[#E8E4DA] hover:border-[#1E3A2F] hover:bg-[#FAF8F5] flex items-center justify-between text-xs transition-colors"
+                    key={task.id}
+                    onClick={() => setSelectedTaskId(task.id)}
+                    className="p-3 rounded-xl border border-[#E8E4DA] hover:border-[#1E3A2F] hover:shadow-2xs transition-all flex items-center justify-between text-xs cursor-pointer group"
                   >
-                    <div className="min-w-0 flex-1">
-                      <div className="font-semibold text-xs text-[#1C221F] truncate">
-                        {g.title}
-                      </div>
-                      <div className="text-[11px] text-[#737C76] mt-0.5">
-                        <span>{g.category}</span> • <span>Due {g.dueDate}</span>
-                      </div>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span
+                        className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                          task.status === 'done'
+                            ? 'bg-emerald-500'
+                            : task.status === 'in_progress'
+                            ? 'bg-amber-500'
+                            : 'bg-blue-500'
+                        }`}
+                      />
+                      <span
+                        className={`font-semibold truncate ${
+                          task.status === 'done' ? 'line-through text-[#8E9892]' : 'text-[#1C221F]'
+                        }`}
+                      >
+                        {task.title}
+                      </span>
                     </div>
-                    <ArrowRight size={14} className="text-[#B8B0A0] shrink-0 ml-2" />
+
+                    <div className="flex items-center gap-3 shrink-0">
+                      {task.dueDate && (
+                        <span className="text-[11px] text-[#8E9892] flex items-center gap-1">
+                          <Clock size={11} />
+                          <span>{task.dueDate}</span>
+                        </span>
+                      )}
+                      <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-[#FAF8F5] text-[#5C6560] border border-[#E8E4DA]">
+                        {task.status.replace('_', ' ')}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
-      {/* INVITATION MODAL */}
-      {inviteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-black/40 backdrop-blur-xs"
-            onClick={() => setInviteModalOpen(false)}
-          />
-          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-xl border border-[#E8E4DA] p-6 z-10 animate-scale-in">
-            <div className="flex items-center justify-between pb-3 border-b border-[#E8E4DA]">
+      {/* Member Profile Modal */}
+      {profileModalMember && (
+        <MemberProfileModal
+          member={profileModalMember}
+          memberInfo={workspaceMembers.find((m) => m.userId === profileModalMember.id)}
+          onClose={() => setProfileModalMember(null)}
+        />
+      )}
+
+      {/* Invitation Modal */}
+      {inviteModalOpen && generatedCode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-2xl border border-[#E8E4DA] shadow-xl w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-[#E8E4DA]">
               <div className="flex items-center gap-2">
                 <UserPlus size={18} className="text-[#1E3A2F]" />
-                <h3 className="text-base font-bold text-[#1C221F]">Invite to {activeWorkspace.name}</h3>
+                <h3 className="font-bold text-sm text-[#1C221F]">Team Invitation Code</h3>
               </div>
               <button
                 onClick={() => setInviteModalOpen(false)}
-                className="p-1 rounded-lg text-[#8E9892] hover:bg-[#FAF8F5]"
+                className="text-[#8E9892] hover:text-[#1C221F]"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
 
-            <div className="mt-4 space-y-4">
-              <p className="text-xs text-[#5C6560] leading-relaxed">
-                Share this secure one-time invitation code with your teammate. They can join via the
-                workspace switcher using "Join with Code".
-              </p>
+            <p className="text-xs text-[#5C6560]">
+              Share this code with teammates to grant access to{' '}
+              <strong className="text-[#1C221F]">{activeWorkspace.name}</strong>. Valid for 72 hours.
+            </p>
 
-              <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#E8E4DA] flex items-center justify-between gap-3">
-                <code className="text-xs font-mono font-bold text-[#1E3A2F] break-all select-all">
-                  {generatedCode}
-                </code>
-                <button
-                  onClick={handleCopyCode}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#1E3A2F] bg-white border border-[#E8E4DA] rounded-lg hover:bg-[#F2EFE9] transition-colors shrink-0"
-                >
-                  {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-                  <span>{copied ? 'Copied' : 'Copy'}</span>
-                </button>
-              </div>
+            <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#E8E4DA] flex items-center justify-between gap-2">
+              <span className="font-mono text-sm font-bold text-[#1E3A2F] tracking-wider break-all select-all">
+                {generatedCode}
+              </span>
+              <button
+                onClick={handleCopyCode}
+                className="px-3 py-1.5 bg-[#1E3A2F] hover:bg-[#162A22] text-white rounded-lg text-xs font-semibold flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
+              >
+                {copied ? <Check size={14} /> : <Copy size={14} />}
+                <span>{copied ? 'Copied' : 'Copy'}</span>
+              </button>
+            </div>
 
-              <div className="text-[11px] text-[#737C76] space-y-1">
-                <div>• Code is valid for 72 hours</div>
-                <div>• Can be used up to 10 times</div>
-                <div>• New members join with standard member permissions</div>
-              </div>
+            <div className="text-[11px] text-[#737C76] bg-amber-50/70 border border-amber-200/60 p-2.5 rounded-xl">
+              <strong>Security Policy:</strong> Joining members are granted standard Member role. Workspace Owners & Admins can assign project responsibilities later.
+            </div>
 
-              <div className="flex justify-end pt-2">
-                <button
-                  onClick={() => setInviteModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold bg-[#1E3A2F] text-white rounded-xl hover:bg-[#162A22]"
-                >
-                  Done
-                </button>
-              </div>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setInviteModalOpen(false)}
+                className="px-4 py-1.5 bg-[#FAF8F5] hover:bg-[#F2EFE9] text-xs font-semibold text-[#1C221F] rounded-xl border border-[#E8E4DA]"
+              >
+                Done
+              </button>
             </div>
           </div>
         </div>
