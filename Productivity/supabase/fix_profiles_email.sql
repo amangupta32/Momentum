@@ -1,5 +1,19 @@
 -- Run this in your Supabase SQL Editor (Dashboard > SQL Editor)
--- 1. Add email column to profiles table if it doesn't already exist
+-- 1. Ensure profiles table exists
+create table if not exists public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  full_name text not null default '',
+  email text not null default '',
+  avatar_url text,
+  title text not null default 'Momentum member',
+  role text not null default 'Member',
+  bio text not null default '',
+  streak_days integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- Ensure email column exists
 alter table public.profiles add column if not exists email text not null default '';
 
 -- 2. Backfill email for any existing users from auth.users
