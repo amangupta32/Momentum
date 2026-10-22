@@ -26,17 +26,18 @@ export interface WorkspaceMemberInfo {
 export function toAppUser(profile: {
   id: string;
   full_name?: string;
+  email?: string;
   avatar_url?: string | null;
   title?: string;
   role?: string;
   bio?: string;
   streak_days?: number;
-}, email = ''): User {
+}, fallbackEmail = ''): User {
   const name = profile.full_name || 'Momentum Member';
   return {
     id: profile.id,
     name,
-    email,
+    email: profile.email || fallbackEmail,
     avatar:
       profile.avatar_url ||
       `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || profile.id)}`,
@@ -259,7 +260,7 @@ export const SupabaseDb = {
 
     const { data, error } = await supabase
       .from('workspace_members')
-      .select('workspace_id, user_id, role, joined_at, profiles (id, full_name, avatar_url, title, role, bio, streak_days)')
+      .select('workspace_id, user_id, role, joined_at, profiles (id, full_name, email, avatar_url, title, role, bio, streak_days)')
       .eq('workspace_id', workspaceId);
 
     if (error || !data) {
@@ -272,6 +273,7 @@ export const SupabaseDb = {
       const prof = (rawProf as unknown) as {
         id: string;
         full_name?: string;
+        email?: string;
         avatar_url?: string | null;
         title?: string;
         role?: string;
@@ -324,7 +326,7 @@ export const SupabaseDb = {
     if (!isSupabaseConfigured || userIds.length === 0) return [];
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, full_name, avatar_url, title, role, bio, streak_days')
+      .select('id, full_name, email, avatar_url, title, role, bio, streak_days')
       .in('id', userIds);
 
     if (error || !data) return [];
@@ -337,6 +339,7 @@ export const SupabaseDb = {
       updated_at: new Date().toISOString(),
     };
     if (updates.name !== undefined) dbPayload.full_name = updates.name;
+    if (updates.email !== undefined) dbPayload.email = updates.email;
     if (updates.avatar !== undefined) dbPayload.avatar_url = updates.avatar;
     if (updates.title !== undefined) dbPayload.title = updates.title;
     if (updates.bio !== undefined) dbPayload.bio = updates.bio;

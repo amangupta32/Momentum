@@ -6,6 +6,7 @@ create extension if not exists pgcrypto;
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text not null default '',
+  email text not null default '',
   avatar_url text,
   title text not null default 'Momentum member',
   role text not null default 'Member',
@@ -15,6 +16,7 @@ create table if not exists public.profiles (
   updated_at timestamptz not null default now()
 );
 
+alter table public.profiles add column if not exists email text not null default '';
 alter table public.profiles add column if not exists title text not null default 'Momentum member';
 alter table public.profiles add column if not exists role text not null default 'Member';
 alter table public.profiles add column if not exists bio text not null default '';
@@ -308,14 +310,16 @@ create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = public
 as $$
 begin
-  insert into public.profiles (id, full_name, avatar_url)
+  insert into public.profiles (id, full_name, email, avatar_url)
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
+    coalesce(new.email, ''),
     coalesce(new.raw_user_meta_data->>'avatar_url', null)
   )
   on conflict (id) do update set
     full_name = case when public.profiles.full_name = '' then excluded.full_name else public.profiles.full_name end,
+    email = case when public.profiles.email = '' or public.profiles.email is null then coalesce(excluded.email, '') else public.profiles.email end,
     avatar_url = coalesce(public.profiles.avatar_url, excluded.avatar_url);
   return new;
 end;

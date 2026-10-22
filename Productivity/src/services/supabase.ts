@@ -7,19 +7,25 @@ const rawKey = (
   ''
 );
 
+// Default fallback credentials for project etnfwwmgjqydfxhztntd
+const defaultUrl = 'https://etnfwwmgjqydfxhztntd.supabase.co';
+const defaultPublishableKey = 'sb_publishable_rdjgnSS8BzEhPK6exTX1Qw_Xf654LQf';
+
 // Fallback to official project URL if not provided
-const supabaseUrl = rawUrl || 'https://etnfwwmgjqydfxhztntd.supabase.co';
+const supabaseUrl = rawUrl || defaultUrl;
+
+const resolvedKey = rawKey || defaultPublishableKey;
 
 // Check if valid client key is provided
 export const isSupabaseConfigured = Boolean(
-  rawKey &&
-  rawKey.length > 20 &&
-  !rawKey.includes('YOUR_SUPABASE')
+  resolvedKey &&
+  resolvedKey.length > 20 &&
+  !resolvedKey.includes('YOUR_SUPABASE')
 );
 
 // If not configured, use safe placeholder JWT so createClient does not crash Vite bundling
 const effectiveKey = isSupabaseConfigured
-  ? rawKey
+  ? resolvedKey
   : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.placeholder_key';
 
 export const supabase: SupabaseClient = createClient(supabaseUrl, effectiveKey, {
